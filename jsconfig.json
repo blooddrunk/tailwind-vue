@@ -1,0 +1,11 @@
+{
+  "compilerOptions": {
+    "target": "esnext",
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"],
+      "styles/*": ["./src/assets/scss/*"]
+    }
+  },
+  "exclude": ["node_modules"]
+}
