@@ -17,4 +17,14 @@ module.exports = {
   },
 
   publicPath: process.env.NODE_ENV === 'production' ? '/production-sub-path/' : '/',
+
+  pluginOptions: {
+    'style-resources-loader': {
+      preProcessor: 'scss',
+      patterns: [
+        path.resolve(__dirname, './src/assets/scss/_variables.scss'),
+        path.resolve(__dirname, './src/assets/scss/_mixins.scss'),
+      ],
+    },
+  },
 };
