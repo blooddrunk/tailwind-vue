@@ -85,18 +85,25 @@ const setupInterceptor = config => {
       // do something maybe
     }
 
+    let handled = false;
     if (error.response) {
       // The request was made and the server responded with a status code
       // that falls out of the range of 2xx
-      validateStatus(error.response);
+      handled = validateStatus(error.response);
     } else if (error.request) {
       // The request was made but no response was received
       // `error.request` is an instance of XMLHttpRequest in the browser and an instance of
       // http.ClientRequest in node.js
     }
 
+    error.handled = handled;
+    if (typeof handled === 'string') {
+      error.message = handled;
+    }
     return Promise.reject(error);
   });
+
+  return axios;
 };
 
 const axiosInstance = setupInterceptor();

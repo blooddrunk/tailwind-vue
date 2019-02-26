@@ -8,10 +8,10 @@ module.exports = {
 
   devServer: {
     proxy: {
-      '^/api': {
-        target: '<url>',
+      '^/mock': {
+        target: 'http://localhost:3001',
         changeOrigin: true,
-        pathRewrite: { '^/api': '' },
+        pathRewrite: { '^/mock': '' },
       },
     },
   },

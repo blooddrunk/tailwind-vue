@@ -8,6 +8,17 @@
   </div>
 </template>
 
+<script>
+export default {
+  name: 'App',
+
+  mounted() {
+    this.$store.dispatch('auth/login');
+    this.$axios.$get('/mock/posts');
+  },
+};
+</script>
+
 <style lang="scss">
 @import '~styles/tailwind.scss';
 
