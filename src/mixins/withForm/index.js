@@ -1,6 +1,10 @@
 import clone from 'lodash/clone';
 
+import withValidation from './withValidation';
+
 export default (initialData = {}, { idKey = 'id' } = {}) => ({
+  mixins: [withValidation],
+
   data: () => ({
     formState: {
       data: clone(initialData),
@@ -26,48 +30,15 @@ export default (initialData = {}, { idKey = 'id' } = {}) => ({
     formData() {
       return this.formState.data;
     },
-
-    isFormDirty() {
-      if (this.formFields) {
-        return Object.keys(this.formFields).some(key => this.formFields[key].dirty);
-      }
-
-      return false;
-    },
   },
 
   methods: {
-    async $_validateForm() {
-      if (this.$validator) {
-        return this.$validator.validate();
-      }
-      return true;
-    },
-
-    $_collectFirstError() {
-      if (this.formErrors) {
-        const errors = this.formErrors.collect();
-        const errorFields = Object.keys(errors);
-        if (!errorFields || !errorFields.length) {
-          return null;
-        }
-
-        const firstField = errorFields[0];
-        return {
-          field: firstField,
-          error: errors[firstField][0],
-        };
-      }
-
-      return null;
-    },
-
     async $_clearFormError() {
       this.formState.fetchError = null;
       this.formState.saveError = null;
       this.formState.validationError = null;
 
-      if (this.$validator) {
+      if (this.validationEnabled) {
         await this.$validator.reset();
       }
     },
@@ -92,39 +63,6 @@ export default (initialData = {}, { idKey = 'id' } = {}) => ({
 
       if (setDefault) {
         this.formState.defaultData = clone(this.formState.data);
-      }
-    },
-
-    async $_saveForm(config) {
-      this.formState.saveError = null;
-      this.formState.validationError = null;
-
-      const valid = await this.$_validateForm();
-      if (!valid) {
-        const validationError = new Error('请检查您填写的内容');
-        this.formState.validationError = validationError;
-        throw validationError;
-      }
-
-      this.formState.saveError = null;
-      this.formState.saving = true;
-
-      try {
-        const response = await this.$axios(config);
-
-        // saved successfully, update default data
-        this.formState.defaultData = clone(this.formState.data);
-
-        this.$emit('form-saved', response);
-
-        return response;
-      } catch (error) {
-        this.formState.saveError = error;
-
-        // FIXME DO NOT  throw maybe?
-        throw error;
-      } finally {
-        this.formState.saving = false;
       }
     },
 
@@ -153,6 +91,36 @@ export default (initialData = {}, { idKey = 'id' } = {}) => ({
         throw error;
       } finally {
         this.formState.loading = false;
+      }
+    },
+
+    async $_saveForm(config) {
+      this.formState.saveError = null;
+      this.formState.validationError = null;
+
+      if (this.validationEnabled) {
+        await this.$_validateForm();
+      }
+
+      this.formState.saveError = null;
+      this.formState.saving = true;
+
+      try {
+        const response = await this.$axios(config);
+
+        // saved successfully, update default data
+        this.formState.defaultData = clone(this.formState.data);
+
+        this.$emit('form-saved', response);
+
+        return response;
+      } catch (error) {
+        this.formState.saveError = error;
+
+        // FIXME DO NOT  throw maybe?
+        throw error;
+      } finally {
+        this.formState.saving = false;
       }
     },
   },

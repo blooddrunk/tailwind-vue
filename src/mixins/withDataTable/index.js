@@ -1,43 +1,79 @@
+import merge from 'lodash/merge';
+import mapKeys from 'lodash/mapKeys';
+
 import { takeLatest } from '@/utils/http';
 
 export default ({
   name = 'dataTable',
   pagination: { page = 1, rowsPerPage = 25 } = {},
-  search = {},
+  filter = {},
+  rowsPerPageItems = [10, 25, 50, 100],
+  paginationMap = {
+    page: 'pageNum',
+    rowsPerPage: 'perPageNum',
+  },
+  defaultDataTransformer = ({ ret: { data = {} } = {} } = {}) => ({
+    items: data.records,
+    total: data.page.total,
+  }),
 } = {}) => {
   let callFetchDataTable;
 
   return {
     data: () => ({
       [name]: {
-        appliedFilter: {},
         error: null,
+        filter,
         items: [],
         loading: false,
         pagination: {
           page,
           rowsPerPage,
         },
-        search,
+        rowsPerPageItems,
         total: 0,
       },
     }),
 
-    methods: {
-      async $_buildQuery() {
+    computed: {
+      presetQuery() {
         return {
-          ...this[name].search,
-          ...this[name].pagination,
+          ...this[name].filter,
+          ...mapKeys(this[name].pagination, (value, key) => paginationMap[key]),
         };
       },
+    },
 
-      async $_fetchDataTable(config) {
+    methods: {
+      async $_fetchItems(config) {
+        this[name].error = null;
+        this[name].loading = true;
+
         if (!callFetchDataTable) {
           callFetchDataTable = takeLatest(this.$axios);
         }
 
-        this[name].error = null;
-        this[name].loading = true;
+        config.method = config.method || 'get';
+
+        let payload = this.presetQuery;
+        if (typeof config.parseQuery === 'function') {
+          payload = config.parseQuery(payload);
+          delete config.parseQuery;
+        }
+
+        if (config.method.toLowerCase() === 'get') {
+          payload = { params: payload };
+        } else {
+          payload = { data: payload };
+        }
+
+        config = merge(
+          {
+            transformData: defaultDataTransformer,
+            ...payload,
+          },
+          config
+        );
 
         try {
           const { data } = await callFetchDataTable(config);
@@ -67,7 +103,6 @@ export default ({
             total,
           };
         } catch (error) {
-          // TODO error handling
           this[name].error = error;
         } finally {
           this[name].loading = false;
