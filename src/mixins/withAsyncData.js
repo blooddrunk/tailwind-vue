@@ -1,6 +1,5 @@
 import { isCancel } from 'axios';
 
-import { HTTPError } from '@/utils/errors';
 import { takeLatest } from '@/utils/http';
 
 const normalizeFields = (fields, { dataKey, stateKey }) =>
@@ -54,7 +53,7 @@ export default (fields = [], config = {}) => {
           this.asyncData[field][dataKey] = [];
           if (!isCancel(error)) {
             const message = `${label}数据加载失败，请稍后重试`;
-            throw new HTTPError(message, true);
+            throw new Error(message, true);
           }
         } finally {
           this.asyncData[field][stateKey] = false;

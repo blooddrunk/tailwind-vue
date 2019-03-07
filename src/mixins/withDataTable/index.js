@@ -1,5 +1,6 @@
 import merge from 'lodash/merge';
 import mapKeys from 'lodash/mapKeys';
+import pick from 'lodash/pick';
 
 import { takeLatest } from '@/utils/http';
 
@@ -37,9 +38,10 @@ export default ({
 
     computed: {
       presetQuery() {
+        const paginationForQuery = pick(this[name].pagination, Object.keys(paginationMap));
         return {
           ...this[name].filter,
-          ...mapKeys(this[name].pagination, (value, key) => paginationMap[key]),
+          ...mapKeys(paginationForQuery, (value, key) => paginationMap[key]),
         };
       },
     },
@@ -103,6 +105,7 @@ export default ({
             total,
           };
         } catch (error) {
+          this.$showSnackbar.error(error.message);
           this[name].error = error;
         } finally {
           this[name].loading = false;
