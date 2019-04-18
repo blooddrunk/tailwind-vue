@@ -17,7 +17,7 @@ const normalizeFields = (fields, { dataKey, stateKey }) =>
   }, {});
 
 export default (fields = [], config = {}) => {
-  const { dataKey = 'data', stateKey = 'loading' } = config;
+  const { dataKey = 'data', stateKey = 'loading', storeKey = 'asyncData' } = config;
 
   if (!Array.isArray(fields)) {
     console.error('[withAsyncData] ', 'field config should be an array');
@@ -28,14 +28,15 @@ export default (fields = [], config = {}) => {
 
   return {
     data: () => ({
-      asyncData: normalizeFields(fields, {
+      [storeKey]: normalizeFields(fields, {
         dataKey,
         stateKey,
       }),
     }),
+
     methods: {
-      async $_fetchAsyncData(field, config, label = '') {
-        if (!this.asyncData.hasOwnProperty(field)) {
+      async $_fetchAsyncData(field, { alertError = true, ...config } = {}, label = '') {
+        if (!this[storeKey].hasOwnProperty(field)) {
           console.error('[withAsyncData] ', field, 'not defined in asyncData');
           return;
         }
@@ -44,27 +45,47 @@ export default (fields = [], config = {}) => {
           asyncRequests.set(field, takeLatest(this.$axios));
         }
 
-        this.asyncData[field][stateKey] = true;
+        this[storeKey][field][stateKey] = true;
         try {
           const { data } = await asyncRequests.get(field)(config);
-          this.asyncData[field][dataKey] = data;
+          this[storeKey][field][dataKey] = data;
+
           return data;
         } catch (error) {
-          this.asyncData[field][dataKey] = [];
+          this[storeKey][field][dataKey] = [];
+
           if (!isCancel(error)) {
-            const message = `${label}数据加载失败，请稍后重试`;
-            throw new Error(message, true);
+            if (alertError) {
+              const message = `${label}数据加载失败，请稍后重试`;
+              // TODO show error
+              console.error(error.handled || message);
+            }
+
+            throw error;
           }
         } finally {
-          this.asyncData[field][stateKey] = false;
+          asyncRequests.delete(field);
+          this[storeKey][field][stateKey] = false;
         }
       },
+
       async $_clearAsyncData() {
-        this.asyncData = normalizeFields(fields, {
+        this[storeKey] = normalizeFields(fields, {
           dataKey,
           stateKey,
         });
       },
+    },
+
+    beforeDestroy() {
+      if (asyncRequests.size) {
+        asyncRequests.forEach(request => {
+          if (request.cancel) {
+            request.cancel('request cancelled due to component destruction');
+          }
+        });
+        asyncRequests.clear();
+      }
     },
   };
 };

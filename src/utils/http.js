@@ -8,11 +8,13 @@ export const takeLatest = axiosCall => {
       cancel('Only one request allowed at a time.');
     }
 
-    return axiosCall({
+    const request = axiosCall({
       ...config,
       cancelToken: new CancelToken(c => {
         cancel = c;
       }),
     });
+    request.cancel = cancel;
+    return request;
   };
 };
