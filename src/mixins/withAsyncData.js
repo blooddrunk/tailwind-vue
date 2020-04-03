@@ -57,7 +57,7 @@ export default (fields = [], config = {}) => {
           if (!isCancel(error)) {
             if (alertError) {
               const message = `${label}数据加载失败，请稍后重试`;
-              // TODO show error
+              // TODO: show error
               console.error(error.handled || message);
             }
 
