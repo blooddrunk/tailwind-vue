@@ -4,7 +4,7 @@ import configureAxios from './configureAxios';
 import router from '@/router';
 import store from '@/store';
 
-const isDev = process.env_NODE_ENV;
+const isDev = process.env.NODE_ENV === 'development';
 const apiRoot = process.env.VUE_APP_API_ROOT;
 const apiMockPrefix = process.env.VUE_APP_API_MOCK_PREFIX;
 

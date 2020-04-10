@@ -1,7 +1,7 @@
 import Axios from 'axios';
 import merge from 'lodash/merge';
 
-const isDev = process.env_NODE_ENV;
+const isDev = process.env.NODE_ENV === 'development';
 const apiRoot = process.env.VUE_APP_API_ROOT;
 const apiPrefix = process.env.VUE_APP_API_PREFIX;
 
